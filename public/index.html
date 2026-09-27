@@ -46,7 +46,8 @@
   .modal-buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 15px; }
   .btn-save { background: #16a34a; color: white; border: none; padding: 8px 14px; border-radius: 4px; font-weight: 600; cursor: pointer; }
   .btn-cancel { background: #64748b; color: white; border: none; padding: 8px 14px; border-radius: 4px; font-weight: 600; cursor: pointer; }
-  .btn-del { background: #dc2626; color: white; border: none; padding: 3px 6px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; }
+  .btn-del { background: #dc2626; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; margin-right: 4px; }
+  .btn-edit { background: #2563eb; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; }
 </style>
 </head>
 <body>
@@ -83,19 +84,20 @@
   </div>
 </div>
 
-<div class="modal" id="addModal">
+<div class="modal" id="entryModal">
   <div class="modal-content">
-    <h2>Neuen Eintrag hinzufügen</h2>
+    <h2 id="modalTitle">Eintrag</h2>
     <div id="modalFormFields"></div>
     <div class="modal-buttons">
-      <button class="btn-cancel" onclick="closeAddModal()">Abbrechen</button>
-      <button class="btn-save" onclick="saveNewEntry()">Speichern</button>
+      <button class="btn-cancel" onclick="closeModal()">Abbrechen</button>
+      <button class="btn-save" onclick="saveEntryData()">Speichern</button>
     </div>
   </div>
 </div>
 
 <script>
 let allData = [];
+let editId = null;
 const categoryCols = {
   "Düren – Patienten": ["Patienten-ID", "Nachname", "Vorname", "Geburtsdatum", "Straße", "PLZ", "Ort", "Telefonnummer", "Versicherung", "Zugewiesene Einrichtung", "Notizen"],
   "Düren – Heime": ["Einrichtung", "Straße", "PLZ", "Ort", "Telefonnummer", "PKV", "GKV", "Website", "Notizen"],
@@ -150,7 +152,7 @@ function render() {
   var displayRows = [];
   
   if (activeTab === "ALLE") {
-    cols = ["Kategorie", "Nachname / Einrichtung", "Vorname / Details", "Straße", "PLZ", "Ort", "Telefonnummer", "Versicherung", "Notizen", "Aktion"];
+    cols = ["Kategorie", "Nachname / Einrichtung", "Vorname / Details", "Straße", "PLZ", "Ort", "Telefonnummer", "Versicherung", "Notizen"];
     allData.forEach(item => {
       var cat = item.category;
       var rowData = [item.col1, item.col2, item.col3, item.col4, item.col5, item.col6, item.col7, item.col8, item.col9, item.col10, item.col11];
@@ -169,7 +171,7 @@ function render() {
       var rowData = [item.col1, item.col2, item.col3, item.col4, item.col5, item.col6, item.col7, item.col8, item.col9, item.col10, item.col11];
       var fullText = rowData.join(" ").toLowerCase();
       if (!q || fullText.indexOf(q) !== -1) {
-        displayRows.push({ id: item.id, cols: rowData.slice(0, categoryCols[activeTab].length) });
+        displayRows.push({ id: item.id, raw: rowData, cols: rowData.slice(0, categoryCols[activeTab].length) });
       }
     });
   }
@@ -179,23 +181,44 @@ function render() {
   if (displayRows.length === 0) {
     tbody.innerHTML = `<tr><td colspan="${cols.length}" style="text-align:center; padding:20px; color:#94a3b8;">Keine Treffer gefunden</td></tr>`;
   } else {
-    tbody.innerHTML = displayRows.map(row => `<tr>${row.cols.map(v => `<td>${getBadge(v)}</td>`).join("")}<td><button class="btn-del" onclick="deleteEntry(${row.id})">Löschen</button></td></tr>`).join("");
+    if (activeTab === "ALLE") {
+      tbody.innerHTML = displayRows.map(row => `<tr>${row.cols.map(v => `<td>${getBadge(v)}</td>`).join("")}</tr>`).join("");
+    } else {
+      tbody.innerHTML = displayRows.map(row => `<tr>${row.cols.map(v => `<td>${getBadge(v)}</td>`).join("")}<td><button class="btn-edit" onclick='openEditModal(${row.id}, ${JSON.stringify(row.raw)})'>Bearbeiten</button> <button class="btn-del" onclick="deleteEntry(${row.id})">Löschen</button></td></tr>`).join("");
+    }
   }
   document.getElementById("count").textContent = displayRows.length + " Einträge gefunden";
 }
 
 function openAddModal() {
   if (activeTab === "ALLE") return;
+  editId = null;
+  document.getElementById("modalTitle").textContent = "Neuen Eintrag hinzufügen";
   document.getElementById("modalFormFields").innerHTML = categoryCols[activeTab].map((col, i) => `<div class="form-group"><label>${col}</label><input type="text" id="field_${i}"></div>`).join("");
-  document.getElementById("addModal").style.display = "flex";
+  document.getElementById("entryModal").style.display = "flex";
 }
 
-function closeAddModal() { document.getElementById("addModal").style.display = "none"; }
+function openEditModal(id, rawData) {
+  editId = id;
+  document.getElementById("modalTitle").textContent = "Eintrag bearbeiten";
+  document.getElementById("modalFormFields").innerHTML = categoryCols[activeTab].map((col, i) => `<div class="form-group"><label>${col}</label><input type="text" id="field_${i}" value="${rawData[i] || ''}"></div>`).join("");
+  document.getElementById("entryModal").style.display = "flex";
+}
 
-async function saveNewEntry() {
+function closeModal() { document.getElementById("entryModal").style.display = "none"; }
+
+async function saveEntryData() {
   var values = categoryCols[activeTab].map((_, i) => document.getElementById(`field_${i}`).value);
-  const res = await fetch('/api/entries', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ category: activeTab, cols: values }) });
-  if (res.ok) { closeAddModal(); loadData(); }
+  
+  if (editId === null) {
+    // Neu erstellen
+    const res = await fetch('/api/entries', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ category: activeTab, cols: values }) });
+    if (res.ok) { closeModal(); loadData(); }
+  } else {
+    // Bestehenden aktualisieren
+    const res = await fetch(`/api/entries/${editId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ category: activeTab, cols: values }) });
+    if (res.ok) { closeModal(); loadData(); }
+  }
 }
 
 async function deleteEntry(id) {
