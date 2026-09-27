@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Telefonbuch Düren & Köln</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #1e293b; background: #f1f5f9; margin: 0; padding: 12px; }
+  .card { max-width: 1000px; margin: 0 auto; background: #ffffff; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  h1 { font-size: 1.3rem; color: #1e3a8a; margin: 0 0 6px 0; }
+  .sub { color: #64748b; font-size: 0.85rem; margin-bottom: 12px; }
+  
+  /* Tabs Navigation Top */
+  .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .tab { padding: 6px 12px; border: 1px solid #cbd5e1; background: #f8fafc; border-radius: 20px; font-weight: 600; font-size: 0.8rem; color: #475569; cursor: pointer; }
+  .tab.active { background: #2563eb; color: #ffffff; border-color: #2563eb; }
+  
+  /* Search Box */
+  .search-container { background: #fef08a; padding: 10px; border-radius: 8px; border: 2px solid #eab308; margin-bottom: 14px; }
+  .search-container label { font-weight: 700; color: #854d0e; font-size: 0.85rem; display: block; margin-bottom: 4px; }
+  .search-container input { width: 100%; padding: 10px; font-size: 1rem; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; background: #fff; }
+  
+  .info { font-size: 0.8rem; color: #64748b; margin-bottom: 8px; font-weight: 600; }
+  
+  /* Responsive Table Wrapper */
+  .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; text-align: left; white-space: nowrap; }
+  th { background: #1e3a8a; color: #ffffff; padding: 8px 10px; font-size: 0.75rem; text-transform: uppercase; }
+  td { padding: 8px 10px; border-bottom: 1px solid #e2e8f0; }
+  tr:nth-child(even) { background: #f8fafc; }
+  
+  .badge { display: inline-block; padding: 2px 6px; border-radius: 10px; font-size: 0.7rem; font-weight: 700; }
+  .pkv { background: #fef3c7; color: #92400e; }
+  .gkv { background: #dcfce7; color: #166534; }
+  .unklar { background: #e2e8f0; color: #475569; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>📞 Telefonbuch Düren & Köln</h1>
+  <div class="sub">⚡ Live-Suche (Funktioniert direkt beim Tippen)</div>
+  
+  <div class="tabs" id="tabs"></div>
+  
+  <div class="search-container">
+    <label for="search">🔍 Live-Suchfeld:</label>
+    <input type="search" id="search" placeholder="Name, Straße, PLZ, Telefon eingeben..." autocomplete="off">
+  </div>
+  
+  <div class="info" id="count">0 Einträge</div>
+  
+  <div class="table-responsive">
+    <table>
+      <thead><tr id="thead"></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+var data = {
+  "Düren – Patienten": {
+    cols: ["Patienten-ID", "Nachname", "Vorname", "Geburtsdatum", "Straße", "PLZ", "Ort", "Telefonnummer", "Versicherung", "Zugewiesene Einrichtung", "Notizen"],
+    rows: [
+      ["","Schmitz","Klaus","12.03.1950","Roonstraße 15","52351","Düren","+49 2421 112233","GKV","Krankenhaus Düren","Ambulante Nachsorge"],
+      ["","Becker","Hannelore","05.07.1939","Dr.-Overhues-Allee 10","52355","Düren","+49 2421 445566","PKV","Alten- und Pflegezentrum St. Nikolaus","Kurzzeitpflege"],
+      ["","Schröder","Stefan","18.09.1972","Kölnstraße 45","52351","Düren","+49 2421 778899","GKV","St. Marien-Hospital Düren-Birkesdorf","Orthopädische Kontrolle"]
+    ]
+  },
+  "Düren – Heime": {
+    cols: ["Einrichtung", "Straße", "PLZ", "Ort", "Telefonnummer", "PKV", "GKV", "Website", "Notizen"],
+    rows: [
+      ["Alten- und Pflegezentrum St. Nikolaus","Dr.-Overhues-Allee 42","52355","Düren","+49 2421 699-0","Unklar","Unklar","",""],
+      ["Alten- und Pflegezentrum St. Teresa","Dr.-Overhues-Allee 44","52355","Düren","+49 2421 699-3001","Unklar","Unklar","",""],
+      ["Anna-Schoeller-Haus","Roonstraße 8","52351","Düren","+49 2421 398-0","Unklar","Unklar","",""],
+      ["Anna-Schoeller-Haus für blinde Pflegebedürftige","Roonstraße 8","52351","Düren","+49 2421 398-0","Unklar","Unklar","",""],
+      ["St. Gertrud Seniorenhaus","Kölnstraße 62","52351","Düren","+49 2421 3064-0","Unklar","Unklar","",""],
+      ["Seniorenzentrum Düren","Akazienstraße 1B","52353","Düren","+49 2421 805-8000","Unklar","Unklar","",""],
+      ["Seniorenzentrum Gürzenich","Am Dürener Weg 8","52349","Düren","+49 2421 9630","Unklar","Unklar","",""],
+      ["Wohnanlage Am Holzbendenpark","Stürtzstraße 33","52349","Düren","+49 2421 20790","Unklar","Unklar","",""],
+      ["Wohnanlage Am Wingert","Am Wingert 21","52349","Düren","+49 2421 44010","Unklar","Unklar","",""],
+      ["Senioren-Park carpe diem Düren","Neue Jülicher Straße 48-59","52353","Düren","+49 2421 30550","Unklar","Unklar","",""],
+      ["St. Ritastift Seniorenhaus","Rütger-von-Scheven-Straße 81","52349","Düren","+49 2421 5550","Unklar","Unklar","",""],
+      ["Altenheim St. Anna","Waisenhausstraße 8","52349","Düren","+49 2421 28420","Unklar","Unklar","",""],
+      ["Schenkel-Schoeller-Stift","Von-Aue-Straße 7","52355","Düren","+49 2421 5960","Unklar","Unklar","",""],
+      ["AWO Hermann-Koch-Seniorenzentrum","Im Weyerfeld 1","52349","Düren","+49 2421 5930","Unklar","Unklar","",""],
+      ["SeniorenHaus Vitalis","Elstergasse 23","52355","Düren","+49 2421 951873","Unklar","Unklar","",""]
+    ]
+  },
+  "Düren – Krankenhäuser": {
+    cols: ["Einrichtung", "Straße", "PLZ", "Ort", "Telefonnummer", "PKV", "GKV", "Website", "Notizen"],
+    rows: [
+      ["Krankenhaus Düren","Roonstraße 30","52351","Düren","+49 2421 30-0","Unklar","Unklar","",""],
+      ["St. Marien-Hospital Düren-Birkesdorf","Hospitalstraße 44","52353","Düren","+49 2421 805-0","Unklar","Unklar","",""],
+      ["St. Augustinus-Krankenhaus","Renkerstraße 45","52355","Düren","+49 2421 599-0","Unklar","Unklar","",""],
+      ["LVR-Klinik Düren","Meckerstraße 15","52353","Düren","+49 2421 400-0","Unklar","Unklar","",""],
+      ["Medicenter Düren","Arnoldsweilerstraße 21-23","52351","Düren","+49 2421 9494-0","Unklar","Unklar","",""]
+    ]
+  },
+  "Köln – Patienten": {
+    cols: ["Patienten-ID", "Nachname", "Vorname", "Geburtsdatum", "Straße", "PLZ", "Ort", "Telefonnummer", "Versicherung", "Zugewiesene Einrichtung", "Notizen"],
+    rows: [
+      ["PK-5001","Müller","Anna","15.04.1958","Aachener Str. 12","50674","Köln","+49 221 1234567","GKV","Uniklinik Köln","Regelmäßige Dialyse"],
+      ["PK-5002","Schneider","Peter","22.08.1942","Hauptstraße 89","50933","Köln","+49 221 9876543","PKV","St. Elisabeth-Krankenhaus Köln-Hohenlind","Physiotherapie"],
+      ["PK-5003","Fischer","Maria","03.11.1936","Severinswall 10","50678","Köln","+49 221 4567890","GKV","AWO Seniorenzentrum Arnold-Overzier-Haus","Stationäre Pflege"],
+      ["PK-5004","Weber","Michael","30.01.1965","Neusser Str. 120","50737","Köln","+49 221 3344556","PKV","Heilig Geist-Krankenhaus","Kardiologische Nachsorge"]
+    ]
+  },
+  "Köln – Heime": {
+    cols: ["Einrichtung", "Straße", "PLZ", "Ort", "Telefonnummer", "PKV", "GKV", "Website", "Notizen"],
+    rows: [
+      ["RESIDENZ am Dom – Stationäre Pflege","An den Dominikanern 6-8","50668","Köln","+49 221 16640","Unklar","Unklar","",""],
+      ["SBK Sozial-Betriebe-Köln","Boltensternstraße 16","50735","Köln","+49 221 77750","Unklar","Unklar","",""],
+      ["AWO Seniorenzentrum Arnold-Overzier-Haus","Severinswall 43","50678","Köln","+49 221 33010","Unklar","Unklar","",""],
+      ["Bodelschwingh-Haus","Bergisch Gladbacher Straße 74","51065","Köln","+49 221 99563271","Unklar","Unklar","",""],
+      ["Clarenbachstift","Peter-von-Fliesteden-Straße 2","50933","Köln","+49 221 9498280","Unklar","Unklar","",""],
+      ["Frida Kahlo Haus","Alter Militärring 94","50933","Köln","+49 221 4985120","Unklar","Unklar","",""],
+      ["Häuser Paulus und Stephanus","Neuer Grüner Weg 15-19","50933","Köln","+49 221 4985777","Unklar","Unklar","",""],
+      ["Johanniter-Haus Köln-Finkenberg","Konrad-Adenauer-Straße 16","51149","Köln","+49 2203 93400","Unklar","Unklar","",""],
+      ["Johanniter-Haus Köln-Porz","Königsberger Straße 11","51145","Köln","+49 2203 3060","Unklar","Unklar","",""],
+      ["Johanniter-Haus Köln-Zollstock","Sibille-Hartmann-Straße 1","50969","Köln","+49 221 340920","Unklar","Unklar","",""],
+      ["Johanniter-Stift Köln-Flittard","Roggendorfstraße 39","51061","Köln","+49 221 9223580","Unklar","Unklar","",""],
+      ["Johanniter-Stift Köln-Poll","Jakob-Kneip-Straße 15","51105","Köln","+49 221 993813100","Unklar","Unklar","",""],
+      ["MARIENBORN Pflege St. Christophorus","Feldgärtenstraße 109b","50735","Köln","+49 221 2714101","Unklar","Unklar","",""],
+      ["Senioren- und Behindertenzentrum Köln-Mülheim","Tiefentalstraße 68","51063","Köln","+49 221 77752100","Unklar","Unklar","",""],
+      ["Zentrum für Betreuung und Pflege Phönix Köln-Weidenpesch","Neusser Straße 669-673","50737","Köln","+49 221 7021360","Unklar","Unklar","",""],
+      ["Johanniter-Stift Köln-Ehrenfeld","Mechternstraße 28","50823","Köln","+49 221 56950","Unklar","Unklar","",""],
+      ["Johanniter-Stift Köln-Kalk","Kapellenstraße 52","51103","Köln","+49 221 89009510","Unklar","Unklar","",""],
+      ["Haus Stephanus Pflegeheime","Am Altenberger Kreuz 18","51105","Köln","+49 221 70994-0","Unklar","Unklar","",""]
+    ]
+  },
+  "Köln – Krankenhäuser": {
+    cols: ["Einrichtung", "Straße", "PLZ", "Ort", "Telefonnummer", "PKV", "GKV", "Website", "Notizen"],
+    rows: [
+      ["Uniklinik Köln","Kerpener Straße 62","50937","Köln","+49 221 478-0","Unklar","Unklar","",""],
+      ["St. Elisabeth-Krankenhaus Köln-Hohenlind","Werthmannstraße 1","50935","Köln","+49 221 4677-0","Unklar","Unklar","",""],
+      ["Krankenhaus Porz am Rhein gGmbH","Urbacher Weg 19","51149","Köln","+49 2203 566-0","Unklar","Unklar","",""],
+      ["Krankenhaus Köln-Merheim","Ostmerheimer Straße 200","51109","Köln","+49 221 8907-0","Unklar","Unklar","",""],
+      ["Krankenhaus Köln-Holweide","Neufelder Straße 32","51067","Köln","+49 221 8907-0","Unklar","Unklar","",""],
+      ["Cellitinnen-Krankenhaus St. Marien","Kunibertskloster 11-13","50668","Köln","+49 221 1629-0","Unklar","Unklar","",""],
+      ["Heilig Geist-Krankenhaus","Graseggerstraße 105","50737","Köln","+49 221 7491-0","Unklar","Unklar","",""],
+      ["Dreifaltigkeits-Krankenhaus","Aachener Straße 445-449","50933","Köln","+49 221 940710","Unklar","Unklar","",""],
+      ["Evangelisches Krankenhaus Weyertal","Weyertal 76","50931","Köln","+49 221 479-0","Unklar","Unklar","",""],
+      ["St. Antonius Krankenhaus Köln","Schillerstraße 23","50968","Köln","+49 221 3793-0","Unklar","Unklar","",""]
+    ]
+  }
+};
+
+var activeTab = "ALLE";
+
+function init() {
+  var tabsContainer = document.getElementById("tabs");
+  var keys = ["ALLE"].concat(Object.keys(data));
+  
+  tabsContainer.innerHTML = "";
+  for (var i = 0; i < keys.length; i++) {
+    (function(k) {
+      var btn = document.createElement("button");
+      btn.className = "tab" + (k === activeTab ? " active" : "");
+      btn.textContent = k === "ALLE" ? "🔍 Alle (Gesamtsuche)" : k;
+      btn.onclick = function() {
+        activeTab = k;
+        var allTabs = tabsContainer.getElementsByTagName("button");
+        for (var j = 0; j < allTabs.length; j++) {
+          allTabs[j].className = "tab";
+        }
+        btn.className = "tab active";
+        render();
+      };
+      tabsContainer.appendChild(btn);
+    })(keys[i]);
+  }
+  
+  document.getElementById("search").oninput = render;
+  render();
+}
+
+function getBadge(v) {
+  if (v === "PKV") return '<span class="badge pkv">PKV</span>';
+  if (v === "GKV") return '<span class="badge gkv">GKV</span>';
+  if (v === "Unklar") return '<span class="badge unklar">Unklar</span>';
+  return v || "";
+}
+
+function render() {
+  var q = document.getElementById("search").value.toLowerCase().trim();
+  var thead = document.getElementById("thead");
+  var tbody = document.getElementById("tbody");
+  var cols = [];
+  var rows = [];
+  
+  if (activeTab === "ALLE") {
+    cols = ["Kategorie", "Nachname / Einrichtung", "Vorname / Details", "Straße", "PLZ", "Ort", "Telefonnummer", "Versicherung", "Notizen"];
+    
+    for (var cat in data) {
+      var sheet = data[cat];
+      for (var r = 0; r < sheet.rows.length; r++) {
+        var rowData = sheet.rows[r];
+        var fullText = (cat + " " + rowData.join(" ")).toLowerCase();
+        
+        if (!q || fullText.indexOf(q) !== -1) {
+          if (sheet.cols.indexOf("Patienten-ID") !== -1) {
+            rows.push([
+              cat, rowData[1], (rowData[2] + " " + (rowData[0] ? "(" + rowData[0] + ")" : "")).trim(),
+              rowData[4], rowData[5], rowData[6], rowData[7], rowData[8], (rowData[9] + " " + rowData[10]).trim()
+            ]);
+          } else {
+            rows.push([
+              cat, rowData[0], "Einrichtung", rowData[1], rowData[2], rowData[3], rowData[4],
+              "PKV: " + rowData[5] + " / GKV: " + rowData[6], rowData[8]
+            ]);
+          }
+        }
+      }
+    }
+  } else {
+    var sheet = data[activeTab];
+    cols = sheet.cols;
+    for (var r = 0; r < sheet.rows.length; r++) {
+      var rowData = sheet.rows[r];
+      var fullText = rowData.join(" ").toLowerCase();
+      if (!q || fullText.indexOf(q) !== -1) {
+        rows.push(rowData);
+      }
+    }
+  }
+  
+  // Render Headings
+  var headHtml = "";
+  for (var c = 0; c < cols.length; c++) {
+    headHtml += "<th>" + cols[c] + "</th>";
+  }
+  thead.innerHTML = headHtml;
+  
+  // Render Rows
+  if (rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="' + cols.length + '" style="text-align:center; padding:20px; color:#94a3b8;">Keine Treffer gefunden</td></tr>';
+  } else {
+    var bodyHtml = "";
+    for (var i = 0; i < rows.length; i++) {
+      bodyHtml += "<tr>";
+      for (var j = 0; j < rows[i].length; j++) {
+        bodyHtml += "<td>" + getBadge(rows[i][j]) + "</td>";
+      }
+      bodyHtml += "</tr>";
+    }
+    tbody.innerHTML = bodyHtml;
+  }
+  
+  document.getElementById("count").textContent = rows.length + " Einträge gefunden";
+}
+
+window.onload = init;
+</script>
+</body>
+</html>
