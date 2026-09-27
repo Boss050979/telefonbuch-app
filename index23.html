@@ -136,15 +136,16 @@ function initTabs() {
   });
 }
 
-function formatCell(val, colName) {
+function formatCell(val) {
   if (!val) return "";
   if (val === "PKV") return '<span class="badge pkv">PKV</span>';
   if (val === "GKV") return '<span class="badge gkv">GKV</span>';
   if (val === "Unklar") return '<span class="badge unklar">Unklar</span>';
   
-  // Wenn es die Spalte Website ist und eine Webadresse eingetragen ist
-  if (colName === "Website" && (val.startsWith("http://") || val.startsWith("https://") || val.includes("www."))) {
-    let url = val.startsWith("http") ? val : "https://" + val;
+  // Universal-Prüfung: Wenn der Text aussieht wie eine Webadresse
+  let lowerVal = String(val).toLowerCase().trim();
+  if (lowerVal.startsWith("http://") || lowerVal.startsWith("https://") || lowerVal.startsWith("www.")) {
+    let url = lowerVal.startsWith("http") ? val : "https://" + val;
     return `<a href="${url}" target="_blank" class="web-link">🔗 ${val}</a>`;
   }
   
@@ -178,9 +179,6 @@ function render() {
     });
   } else {
     cols = categoryCols[activeTab];
-    let activeColsWithAction = cols.concat(["Aktion"]);
-    thead.innerHTML = activeColsWithAction.map(c => `<th>${c}</th>`).join("");
-    
     allData.filter(item => item.category === activeTab).forEach(item => {
       var rowData = [item.col1, item.col2, item.col3, item.col4, item.col5, item.col6, item.col7, item.col8, item.col9, item.col10, item.col11];
       var fullText = rowData.join(" ").toLowerCase();
@@ -190,20 +188,17 @@ function render() {
     });
   }
   
-  if (activeTab === "ALLE") {
-    thead.innerHTML = cols.map(c => `<th>${c}</th>`).join("");
-  }
+  let headerCols = (activeTab === "ALLE") ? cols : cols.concat(["Aktion"]);
+  thead.innerHTML = headerCols.map(c => `<th>${c}</th>`).join("");
   
-  if (displayRows.linkCount === 0 || displayRows.length === 0) {
-    let colLen = activeTab === "ALLE" ? cols.length : cols.length + 1;
-    tbody.innerHTML = `<tr><td colspan="${colLen}" style="text-align:center; padding:20px; color:#94a3b8;">Keine Treffer gefunden</td></tr>`;
+  if (displayRows.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="${headerCols.length}" style="text-align:center; padding:20px; color:#94a3b8;">Keine Treffer gefunden</td></tr>`;
   } else {
     if (activeTab === "ALLE") {
-      tbody.innerHTML = displayRows.map(row => `<tr>${row.cols.map(v => `<td>${formatCell(v, "")}</td>`).join("")}</tr>`).join("");
+      tbody.innerHTML = displayRows.map(row => `<tr>${row.cols.map(v => `<td>${formatCell(v)}</td>`).join("")}</tr>`).join("");
     } else {
-      let currentCols = categoryCols[activeTab];
       tbody.innerHTML = displayRows.map(row => {
-        let cellsHtml = row.cols.map((v, idx) => `<td>${formatCell(v, currentCols[idx])}</td>`).join("");
+        let cellsHtml = row.cols.map(v => `<td>${formatCell(v)}</td>`).join("");
         return `<tr>${cellsHtml}<td><button class="btn-edit" onclick='openEditModal(${row.id}, ${JSON.stringify(row.raw)})'>Bearbeiten</button> <button class="btn-del" onclick="deleteEntry(${row.id})">Löschen</button></td></tr>`;
       }).join("");
     }
@@ -232,7 +227,7 @@ async function saveEntryData() {
   var values = categoryCols[activeTab].map((_, i) => document.getElementById(`field_${i}`).value);
   
   if (editId === null) {
-    const res = await fetch('/api/entries', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ category: activeTab, cols: values }) });
+    const res = abend = await fetch('/api/entries', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ category: activeTab, cols: values }) });
     if (res.ok) { closeModal(); loadData(); }
   } else {
     const res = await fetch(`/api/entries/${editId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ category: activeTab, cols: values }) });
@@ -242,7 +237,7 @@ async function saveEntryData() {
 
 async function deleteEntry(id) {
   if (!confirm("Eintrag wirklich löschen?")) return;
-  const res = await fetch(`/api/entries/${id}`, { method: 'DELETE'});
+  const res = await fetch(`/api/entries/${id}`, { method: 'DELETE' });
   if (res.ok) loadData();
 }
 
