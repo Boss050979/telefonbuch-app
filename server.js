@@ -30,7 +30,6 @@ function createTable() {
   )`;
   db.run(sql, (err) => {
     if (!err) {
-      // Prüfen ob Startdaten geladen werden müssen
       checkInitialData();
     }
   });
@@ -39,7 +38,7 @@ function createTable() {
 // Beispiel-Startdaten einfügen, falls die Tabelle leer ist
 function checkInitialData() {
   db.get("SELECT COUNT(*) as count FROM entries", (err, row) => {
-    if (row.count === 0) {
+    if (row && row.count === 0) {
       console.log("Füge initiale Standarddaten ein...");
       const initialEntries = [
         ["Düren – Patienten", "", "Schmitz", "Klaus", "12.03.1950", "Roonstraße 15", "52351", "Düren", "+49 2421 112233", "GKV", "Krankenhaus Düren", "Ambulante Nachsorge"],
