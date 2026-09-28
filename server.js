@@ -35,16 +35,37 @@ function createTable() {
   });
 }
 
-// Beispiel-Startdaten einfügen, falls die Tabelle leer ist
+// Beispiel- und Standarddaten einfügen, falls die Tabelle leer ist
 function checkInitialData() {
   db.get("SELECT COUNT(*) as count FROM entries", (err, row) => {
     if (row && row.count === 0) {
-      console.log("Füge initiale Standarddaten ein...");
+      console.log("Füge initiale Standarddaten (Krankenhäuser & Heime) ein...");
       const initialEntries = [
+        // Patienten Düren
         ["Düren – Patienten", "", "Schmitz", "Klaus", "12.03.1950", "Roonstraße 15", "52351", "Düren", "+49 2421 112233", "GKV", "Krankenhaus Düren", "Ambulante Nachsorge"],
         ["Düren – Patienten", "", "Becker", "Hannelore", "05.07.1939", "Dr.-Overhues-Allee 10", "52355", "Düren", "+49 2421 445566", "PKV", "Alten- und Pflegezentrum St. Nikolaus", "Kurzzeitpflege"],
-        ["Düren – Heime", "Alten- und Pflegezentrum St. Nikolaus", "Dr.-Overhues-Allee 42", "52355", "Düren", "+49 2421 699-0", "Unklar", "Unklar", "", "", ""],
-        ["Köln – Patienten", "PK-5001", "Müller", "Anna", "15.04.1958", "Aachener Str. 12", "50674", "Köln", "+49 221 1234567", "GKV", "Uniklinik Köln", "Regelmäßige Dialyse"]
+        
+        // Patienten Köln
+        ["Köln – Patienten", "PK-5001", "Müller", "Anna", "15.04.1958", "Aachener Str. 12", "50674", "Köln", "+49 221 1234567", "GKV", "Uniklinik Köln", "Regelmäßige Dialyse"],
+
+        // Krankenhäuser Düren
+        ["Düren – Krankenhäuser", "Krankenhaus Düren", "Roonstraße 30", "52351", "Düren", "+49 2421 300", "PKV", "GKV", "www.krankenhaus-dueren.de", "Akademisches Lehrkrankenhaus", ""],
+        ["Düren – Krankenhäuser", "St. Marien-Hospital Düren", "Hospitalstraße 44", "52353", "Düren", "+49 2421 805-0", "PKV", "GKV", "www.marien-hospital-dueren.de", "Teil der Josefs-Gesellschaft", ""],
+
+        // Krankenhäuser Köln
+        ["Köln – Krankenhäuser", "Uniklinik Köln", "Kerpener Straße 62", "50937", "Köln", "+49 221 478-0", "PKV", "GKV", "www.uk-koeln.de", "Maximalversorger", ""],
+        ["Köln – Krankenhäuser", "Krankenhaus Köln-Merheim", "Ostmerheimer Straße 200", "51109", "Köln", "+49 221 8907-0", "PKV", "GKV", "www.kliniken-koeln.de", "Kliniken der Stadt Köln", ""],
+        ["Köln – Krankenhäuser", "Krankenhaus Holweide", "Neufelder Straße 32", "51067", "Köln", "+49 221 8907-0", "PKV", "GKV", "www.kliniken-koeln.de", "Kliniken der Stadt Köln", ""],
+
+        // Heime Düren
+        ["Düren – Heime", "Alten- und Pflegezentrum St. Nikolaus", "Dr.-Overhues-Allee 42", "52355", "Düren", "+49 2421 699-0", "PKV", "GKV", "www.sj.de", "Stationäre Pflege & Kurzzeitpflege", ""],
+        ["Düren – Heime", "Cellitinnen-Seniorenhaus St. Gertrud", "Kölnstraße 62", "52351", "Düren", "+49 2421 3064-0", "PKV", "GKV", "www.sh-st-gertrud.de", "Vollstationäre Pflege", ""],
+        ["Düren – Heime", "Seniorenzentrum Düren-Birkesdorf", "Akazienstraße 1b", "52353", "Düren", "+49 2421 955-0", "PKV", "GKV", "www.seniorenzentrum-dueren.de", "Josefs-Gesellschaft", ""],
+
+        // Heime Köln
+        ["Köln – Heime", "Seniorenzentrum Köln-Riehl (SBK)", "Boltensternstraße 16", "50735", "Köln", "+49 221 7775-2000", "PKV", "GKV", "www.sbk.koeln", "SBK Köln", ""],
+        ["Köln – Heime", "Cellitinnen-Seniorenhaus St. Anna", "Franzstraße 16", "50931", "Köln", "+49 221 940523-0", "PKV", "GKV", "www.sh-st-anna.de", "Lindenthal", ""],
+        ["Köln – Heime", "Johanniter-Stift Köln-Ehrenfeld", "Mechternstraße 28", "50823", "Köln", "+49 221 5695-0", "PKV", "GKV", "www.johanniter.de", "Stationäre Pflege", ""]
       ];
       
       const stmt = db.prepare(`INSERT INTO entries (category, col1, col2, col3, col4, col5, col6, col7, col8, col9, col10, col11) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
